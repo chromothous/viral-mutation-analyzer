@@ -11,3 +11,6 @@ Version 0.0.3
 Logging foundation is online.
 
 Version 0.0.4
+Sequence statistics are online.
+
+Version 0.0.5

@@ -41,3 +41,40 @@ class Analyzer:
 
     def get_sequence_type(self):
         return self.sequence_type
+
+    def get_length(self):
+        if self.sequence is None:
+            raise ValueError("No sequence has been loaded.")
+        return len(self.sequence)
+
+    def get_nucleotide_counts(self):
+        if self.sequence is None:
+            raise ValueError("No sequence has been loaded.")
+        counts = {
+            "A": self.sequence.count("A"),
+            "T": self.sequence.count("T"),
+            "U": self.sequence.count("U"),
+            "G": self.sequence.count("G"),
+            "C": self.sequence.count("C"),
+            "N": self.sequence.count("N")
+        }
+        self.logger.info("Nucleotide counts calculated.")
+        if counts["N"] > 0:
+            self.logger.warning(f"Sequence contains {counts['N']} ambiguous N bases.")
+        return counts
+
+    def get_nucleotide_frequencies(self):
+        counts = self.get_nucleotide_counts()
+        length = self.get_length()
+        frequencies = {}
+        for nucleotide, count in counts.items():
+            frequencies[nucleotide] = count / length
+        self.logger.info("Nucleotide frequencies calculated.")
+        return frequencies
+
+    def get_gc_content(self):
+        counts = self.get_nucleotide_counts()
+        length = self.get_length()
+        gc_content = (counts["G"] + counts["C"]) / length
+        self.logger.info(f"GC content calculated: {gc_content:.4f}.")
+        return gc_content

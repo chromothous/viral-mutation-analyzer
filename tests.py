@@ -86,6 +86,32 @@ def full_test():
         print(red(e))
         print(red("Version 0.0.3 logging foundation failed."))
 
+    try:
+        tests += 1
+        analyzer = Analyzer("ATGCCNGTAA")
+        assert analyzer.get_length() == 10
+        counts = analyzer.get_nucleotide_counts()
+        assert counts["A"] == 3
+        assert counts["T"] == 2
+        assert counts["G"] == 2
+        assert counts["C"] == 2
+        assert counts["N"] == 1
+        assert counts["U"] == 0
+        frequencies = analyzer.get_nucleotide_frequencies()
+        assert frequencies["A"] == 0.3
+        assert frequencies["T"] == 0.2
+        assert frequencies["G"] == 0.2
+        assert frequencies["C"] == 0.2
+        assert frequencies["N"] == 0.1
+        assert frequencies["U"] == 0.0
+        assert analyzer.get_gc_content() == 0.4
+        print(green("Version 0.0.4 sequence statistics are online."))
+        success += 1
+    except Exception as e:
+        failure += 1
+        print(red(e))
+        print(red("Version 0.0.4 sequence statistics failed."))
+
     print()
     print("===================================")
     print("VIRAL MUTATION ANALYZER TEST SUITE")
