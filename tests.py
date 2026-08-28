@@ -32,6 +32,39 @@ def full_test():
         print(red(e))
         print(red("Version 0.0.1 foundation failed."))
 
+    try:
+        tests += 1
+        analyzer = Analyzer("ATGCNNATGC")
+        assert analyzer.get_sequence() == "ATGCNNATGC"
+        assert analyzer.get_sequence_type() == "DNA"
+        analyzer = Analyzer("AUGCNN AUGC")
+        assert analyzer.get_sequence() == "AUGCNNAUGC"
+        assert analyzer.get_sequence_type() == "RNA"
+        analyzer.set_sequence("ATGCNN")
+        assert analyzer.get_sequence() == "ATGCNN"
+        assert analyzer.get_sequence_type() == "DNA"
+        try:
+            Analyzer("ATGCX")
+            raise AssertionError("Invalid nucleotide was accepted.")
+        except ValueError:
+            pass
+        try:
+            Analyzer("")
+            raise AssertionError("Empty sequence was accepted.")
+        except ValueError:
+            pass
+        try:
+            Analyzer(12345)
+            raise AssertionError("Non-string sequence was accepted.")
+        except TypeError:
+            pass
+        print(green("Version 0.0.2 sequence foundation is online."))
+        success += 1
+    except Exception as e:
+        failure += 1
+        print(red(e))
+        print(red("Version 0.0.2 sequence foundation failed."))
+
     print()
     print("===================================")
     print("VIRAL MUTATION ANALYZER TEST SUITE")

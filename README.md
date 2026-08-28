@@ -5,3 +5,6 @@ Version 0.0.1
 Foundation is online.
 
 Version 0.0.2
+Sequence foundation is online.
+
+Version 0.0.3
