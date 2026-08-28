@@ -2,6 +2,7 @@ import os
 import sys
 
 from classes.analyzer import Analyzer
+from classes.logger import Logger
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -64,6 +65,26 @@ def full_test():
         failure += 1
         print(red(e))
         print(red("Version 0.0.2 sequence foundation failed."))
+
+    try:
+        tests += 1
+        logger = Logger()
+        assert hasattr(logger, "info")
+        assert hasattr(logger, "warning")
+        assert hasattr(logger, "failure")
+        analyzer = Analyzer("ATGCNNATGC")
+        assert isinstance(analyzer.logger, Logger)
+        assert analyzer.get_sequence() == "ATGCNNATGC"
+        assert analyzer.get_sequence_type() == "DNA"
+        analyzer.logger.info("Testing logger information output.")
+        analyzer.logger.warning("Testing logger warning output.")
+        analyzer.logger.failure("Testing logger failure output.")
+        print(green("Version 0.0.3 logging foundation is online."))
+        success += 1
+    except Exception as e:
+        failure += 1
+        print(red(e))
+        print(red("Version 0.0.3 logging foundation failed."))
 
     print()
     print("===================================")

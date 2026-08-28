@@ -8,3 +8,6 @@ Version 0.0.2
 Sequence foundation is online.
 
 Version 0.0.3
+Logging foundation is online.
+
+Version 0.0.4
