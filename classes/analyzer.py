@@ -1,5 +1,6 @@
-from classes.logger import Logger
+import math
 
+from classes.logger import Logger
 
 class Analyzer:
     DNA_BASES = set("ATGCN")
@@ -78,3 +79,100 @@ class Analyzer:
         gc_content = (counts["G"] + counts["C"]) / length
         self.logger.info(f"GC content calculated: {gc_content:.4f}.")
         return gc_content
+
+    def get_regions(self, window_size):
+        if self.sequence is None:
+            raise ValueError("No sequence has been loaded.")
+        if not isinstance(window_size, int):
+            raise TypeError("Window size must be an integer.")
+        if window_size <= 0:
+            raise ValueError("Window size must be greater than zero.")
+        regions = []
+        for start in range(0, len(self.sequence), window_size):
+            end = min(start + window_size, len(self.sequence))
+            regions.append({
+                "region": len(regions) + 1,
+                "start": start + 1,
+                "end": end,
+                "sequence": self.sequence[start:end]
+            })
+        self.logger.info(
+            f"Sequence divided into {len(regions)} regions using a window size of {window_size}."
+        )
+        return regions
+
+    def get_regional_statistics(self, window_size):
+        regions = self.get_regions(window_size)
+        regional_statistics = []
+        for region in regions:
+            sequence = region["sequence"]
+            length = len(sequence)
+            counts = {
+                "A": sequence.count("A"),
+                "T": sequence.count("T"),
+                "U": sequence.count("U"),
+                "G": sequence.count("G"),
+                "C": sequence.count("C"),
+                "N": sequence.count("N")
+            }
+            frequencies = {
+                nucleotide: count / length
+                for nucleotide, count in counts.items()
+            }
+            gc_content = (counts["G"] + counts["C"]) / length
+            regional_statistics.append({
+                "region": region["region"],
+                "start": region["start"],
+                "end": region["end"],
+                "length": length,
+                "counts": counts,
+                "frequencies": frequencies,
+                "gc_content": gc_content,
+                "ambiguous_bases": counts["N"]
+            })
+        self.logger.info(
+            f"Regional statistics calculated for {len(regional_statistics)} regions."
+        )
+        return regional_statistics
+
+    def get_sequence_complexity(self, sequence=None):
+        if sequence is None:
+            if self.sequence is None:
+                raise ValueError("No sequence has been loaded.")
+            sequence = self.sequence
+        if not isinstance(sequence, str):
+            raise TypeError("Sequence must be a string.")
+        if not sequence:
+            raise ValueError("Sequence cannot be empty.")
+        counts = {}
+        for nucleotide in sequence:
+            counts[nucleotide] = counts.get(nucleotide, 0) + 1
+        length = len(sequence)
+        entropy = 0.0
+        for count in counts.values():
+            probability = count / length
+            entropy -= probability * math.log2(probability)
+        maximum_entropy = math.log2(4)
+        complexity = entropy / maximum_entropy
+        self.logger.info(f"Sequence complexity calculated: {complexity:.4f}.")
+        return complexity
+
+    def get_regional_complexity(self, window_size):
+        regions = self.get_regions(window_size)
+        regional_complexity = []
+        for region in regions:
+            complexity = self.get_sequence_complexity(region["sequence"])
+            regional_complexity.append({
+                "region": region["region"],
+                "start": region["start"],
+                "end": region["end"],
+                "complexity": complexity
+            })
+            if complexity < 0.5:
+                self.logger.warning(
+                    f"Low-complexity region detected: {region['start']}-{region['end']}."
+                )
+        self.logger.info(
+            f"Regional complexity calculated for {len(regional_complexity)} regions."
+        )
+        return regional_complexity

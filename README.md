@@ -14,3 +14,6 @@ Version 0.0.4
 Sequence statistics are online.
 
 Version 0.0.5
+Regional sequence analysis is online.
+
+Version 0.0.6

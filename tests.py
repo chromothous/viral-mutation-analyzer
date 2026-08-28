@@ -112,6 +112,60 @@ def full_test():
         print(red(e))
         print(red("Version 0.0.4 sequence statistics failed."))
 
+    try:
+        tests += 1
+        analyzer = Analyzer("ATGCNNATGCATGC")
+        regions = analyzer.get_regions(5)
+        assert isinstance(regions, list)
+        assert len(regions) == 3
+        assert regions[0]["region"] == 1
+        assert regions[0]["start"] == 1
+        assert regions[0]["end"] == 5
+        assert regions[0]["sequence"] == "ATGCN"
+        assert regions[1]["region"] == 2
+        assert regions[1]["start"] == 6
+        assert regions[1]["end"] == 10
+        assert regions[1]["sequence"] == "NATGC"
+        assert regions[2]["region"] == 3
+        assert regions[2]["start"] == 11
+        assert regions[2]["end"] == 14
+        assert regions[2]["sequence"] == "ATGC"
+        statistics = analyzer.get_regional_statistics(5)
+        assert isinstance(statistics, list)
+        assert len(statistics) == 3
+        assert statistics[0]["length"] == 5
+        assert statistics[0]["counts"]["N"] == 1
+        assert statistics[1]["length"] == 5
+        assert statistics[1]["counts"]["N"] == 1
+        assert statistics[2]["length"] == 4
+        assert statistics[2]["counts"]["A"] == 1
+        assert statistics[2]["counts"]["T"] == 1
+        assert statistics[2]["counts"]["G"] == 1
+        assert statistics[2]["counts"]["C"] == 1
+        assert statistics[2]["counts"]["N"] == 0
+        assert statistics[2]["gc_content"] == 0.5
+        try:
+            analyzer.get_regions(0)
+            raise AssertionError("Zero window size was accepted.")
+        except ValueError:
+            pass
+        try:
+            analyzer.get_regions(-5)
+            raise AssertionError("Negative window size was accepted.")
+        except ValueError:
+            pass
+        try:
+            analyzer.get_regions("5")
+            raise AssertionError("Non-integer window size was accepted.")
+        except TypeError:
+            pass
+        print(green("Version 0.0.5 regional sequence analysis is online."))
+        success += 1
+    except Exception as e:
+        failure += 1
+        print(red(e))
+        print(red("Version 0.0.5 regional sequence analysis failed."))
+
     print()
     print("===================================")
     print("VIRAL MUTATION ANALYZER TEST SUITE")
