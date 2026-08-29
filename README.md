@@ -34,3 +34,6 @@ Unified regional analysis is online.
 Version 0.1.1
 Raw sequence ingestion is online.
 
+Version 0.2.0
+FASTA parsing is online.
+

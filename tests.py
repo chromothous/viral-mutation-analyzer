@@ -5,6 +5,7 @@ import traceback
 from classes.analyzer import Analyzer
 from classes.logger import Logger
 from classes.sequence_ingestor import SequenceIngestor
+from classes.fasta_parser import FastaParser
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -455,6 +456,53 @@ def full_test():
         failure += 1
         print(red(e))
         print(red("Version 0.1.1 raw sequence ingestion failed."))
+
+    try:
+        tests += 1
+        from classes.fasta_parser import FastaParser
+        parser = FastaParser()
+        result = parser.parse(">virus_sample\nATGC\nNNATGC")
+        assert isinstance(result, dict), "FASTA parser did not return a dictionary."
+        assert result["header"] == "virus_sample", "FASTA header was parsed incorrectly."
+        assert result["sequence"] == "ATGCNNATGC", "FASTA sequence was parsed incorrectly."
+        assert result["sequence_type"] == "DNA", "FASTA DNA sequence was not detected correctly."
+        assert result["length"] == 10, "FASTA sequence length is incorrect."
+        assert result["ambiguous_bases"] == 2, "FASTA ambiguous base count is incorrect."
+        assert parser.get_header() == "virus_sample", "FASTA parser did not retain the header."
+        assert parser.get_sequence() == "ATGCNNATGC", "FASTA parser did not retain the sequence."
+        assert parser.get_metadata()["header"] == "virus_sample", "FASTA metadata header is incorrect."
+        result = parser.parse(">rna_sample\nAUGC\nNNNAUGC")
+        assert result["header"] == "rna_sample", "RNA FASTA header was parsed incorrectly."
+        assert result["sequence"] == "AUGCNNNAUGC", "RNA FASTA sequence was parsed incorrectly."
+        assert result["sequence_type"] == "RNA", "RNA FASTA sequence was not detected correctly."
+        assert result["length"] == 11, "RNA FASTA sequence length is incorrect."
+        assert result["ambiguous_bases"] == 3, "RNA FASTA ambiguous base count is incorrect."
+        try:
+            parser.parse("ATGC")
+            raise AssertionError("FASTA content without a header was accepted.")
+        except ValueError:
+            pass
+        try:
+            parser.parse(">virus_sample")
+            raise AssertionError("FASTA content without a sequence was accepted.")
+        except ValueError:
+            pass
+        try:
+            parser.parse(">")
+            raise AssertionError("FASTA content with an empty header was accepted.")
+        except ValueError:
+            pass
+        try:
+            parser.parse(12345)
+            raise AssertionError("Non-string FASTA content was accepted.")
+        except TypeError:
+            pass
+        print(green("Version 0.2.0 FASTA parsing is online."))
+        success += 1
+    except Exception as e:
+        failure += 1
+        print(red(e))
+        print(red("Version 0.2.0 FASTA parsing failed."))
 
     print()
     print("===================================")
