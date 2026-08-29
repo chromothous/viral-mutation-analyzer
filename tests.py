@@ -4,6 +4,7 @@ import traceback
 
 from classes.analyzer import Analyzer
 from classes.logger import Logger
+from classes.sequence_ingestor import SequenceIngestor
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -413,6 +414,47 @@ def full_test():
         failure += 1
         print(red(e))
         print(red("Version 0.1.0 unified regional analysis failed."))
+
+    try:
+        tests += 1
+        ingestor = SequenceIngestor()
+        result = ingestor.ingest("atgc\n nnatgc")
+        assert isinstance(result, dict), "Sequence ingestion did not return a dictionary."
+        assert result["sequence"] == "ATGCNNATGC", "Sequence normalization is incorrect."
+        assert result["sequence_type"] == "DNA", "DNA sequence was not detected correctly."
+        assert result["length"] == 10, "Ingested sequence length is incorrect."
+        assert result["ambiguous_bases"] == 2, "Ambiguous base count is incorrect."
+        assert ingestor.get_sequence() == "ATGCNNATGC", "Ingestor did not retain the sequence."
+        assert ingestor.get_sequence_type() == "DNA", "Ingestor did not retain the sequence type."
+        result = ingestor.ingest("AUGC\nNNNAUGC")
+        assert result["sequence"] == "AUGCNNNAUGC", "RNA sequence normalization is incorrect."
+        assert result["sequence_type"] == "RNA", "RNA sequence was not detected correctly."
+        assert result["length"] == 11, "RNA sequence length is incorrect."
+        assert result["ambiguous_bases"] == 3, "RNA ambiguous base count is incorrect."
+        result = ingestor.ingest("ACGNNACG")
+        assert result["sequence_type"] == "UNKNOWN", "Ambiguous DNA/RNA sequence was not classified as UNKNOWN."
+        assert result["length"] == 8, "Unknown sequence length is incorrect."
+        try:
+            ingestor.ingest("")
+            raise AssertionError("Empty sequence was accepted.")
+        except ValueError:
+            pass
+        try:
+            ingestor.ingest("ATGCX")
+            raise AssertionError("Invalid nucleotide was accepted.")
+        except ValueError:
+            pass
+        try:
+            ingestor.ingest(12345)
+            raise AssertionError("Non-string sequence was accepted.")
+        except TypeError:
+            pass
+        print(green("Version 0.1.1 raw sequence ingestion is online."))
+        success += 1
+    except Exception as e:
+        failure += 1
+        print(red(e))
+        print(red("Version 0.1.1 raw sequence ingestion failed."))
 
     print()
     print("===================================")

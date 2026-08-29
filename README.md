@@ -31,3 +31,6 @@ Motif analysis is online.
 Version 0.1.0
 Unified regional analysis is online.
 
+Version 0.1.1
+Raw sequence ingestion is online.
+
