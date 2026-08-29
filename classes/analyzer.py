@@ -2,6 +2,7 @@ import math
 
 from classes.logger import Logger
 
+
 class Analyzer:
     DNA_BASES = set("ATGCN")
     RNA_BASES = set("AUGCN")
@@ -147,13 +148,29 @@ class Analyzer:
         counts = {}
         for nucleotide in sequence:
             counts[nucleotide] = counts.get(nucleotide, 0) + 1
-        length = len(sequence)
+        canonical_bases = {"A", "T", "U", "G", "C"}
+        known_counts = {
+            nucleotide: count
+            for nucleotide, count in counts.items()
+            if nucleotide in canonical_bases
+        }
+        known_length = sum(known_counts.values())
+        if known_length == 0:
+            if "N" in counts:
+                self.logger.warning("Sequence contains only ambiguous bases.")
+                return 0.0
+            raise ValueError("Sequence contains no recognized nucleotides.")
         entropy = 0.0
-        for count in counts.values():
-            probability = count / length
+        for count in known_counts.values():
+            probability = count / known_length
             entropy -= probability * math.log2(probability)
         maximum_entropy = math.log2(4)
         complexity = entropy / maximum_entropy
+        complexity = min(max(complexity, 0.0), 1.0)
+        if "N" in counts:
+            self.logger.warning(
+                f"Sequence complexity calculated with {counts['N']} ambiguous N bases excluded from known-base entropy."
+            )
         self.logger.info(f"Sequence complexity calculated: {complexity:.4f}.")
         return complexity
 
@@ -176,3 +193,65 @@ class Analyzer:
             f"Regional complexity calculated for {len(regional_complexity)} regions."
         )
         return regional_complexity
+
+    def get_repeats(self, repeat_length):
+        if self.sequence is None:
+            raise ValueError("No sequence has been loaded.")
+        if not isinstance(repeat_length, int):
+            raise TypeError("Repeat length must be an integer.")
+        if repeat_length <= 0:
+            raise ValueError("Repeat length must be greater than zero.")
+        if repeat_length > len(self.sequence):
+            raise ValueError("Repeat length cannot exceed sequence length.")
+        repeats = {}
+        for start in range(len(self.sequence) - repeat_length + 1):
+            pattern = self.sequence[start:start + repeat_length]
+            repeats.setdefault(pattern, []).append(start + 1)
+        repeated_patterns = {}
+        for pattern, positions in repeats.items():
+            if len(positions) > 1:
+                repeated_patterns[pattern] = positions
+        self.logger.info(
+            f"Detected {len(repeated_patterns)} repeated patterns of length {repeat_length}."
+        )
+        return repeated_patterns
+
+    def get_repeat_frequency(self, repeat_length):
+        repeats = self.get_repeats(repeat_length)
+        frequency = sum(len(positions) for positions in repeats.values())
+        self.logger.info(
+            f"Repeat frequency calculated: {frequency} occurrences."
+        )
+        return frequency
+
+    def get_regional_repeat_density(self, window_size, repeat_length):
+        regions = self.get_regions(window_size)
+        regional_density = []
+        for region in regions:
+            sequence = region["sequence"]
+            if len(sequence) < repeat_length:
+                density = 0.0
+            else:
+                repeats = {}
+                for start in range(len(sequence) - repeat_length + 1):
+                    pattern = sequence[start:start + repeat_length]
+                    repeats.setdefault(pattern, 0)
+                    repeats[pattern] += 1
+                repeated_occurrences = sum(
+                    count for count in repeats.values() if count > 1
+                )
+                density = repeated_occurrences / len(sequence)
+            regional_density.append({
+                "region": region["region"],
+                "start": region["start"],
+                "end": region["end"],
+                "repeat_density": density
+            })
+            if density > 0.5:
+                self.logger.warning(
+                    f"High repeat density detected: {region['start']}-{region['end']}."
+                )
+        self.logger.info(
+            f"Regional repeat density calculated for {len(regional_density)} regions."
+        )
+        return regional_density

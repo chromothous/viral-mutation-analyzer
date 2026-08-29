@@ -1,5 +1,6 @@
 import os
 import sys
+import traceback
 
 from classes.analyzer import Analyzer
 from classes.logger import Logger
@@ -30,6 +31,7 @@ def full_test():
         success += 1
     except Exception as e:
         failure += 1
+        red(traceback.print_exc())
         print(red(e))
         print(red("Version 0.0.1 foundation failed."))
 
@@ -63,6 +65,7 @@ def full_test():
         success += 1
     except Exception as e:
         failure += 1
+        red(traceback.print_exc())
         print(red(e))
         print(red("Version 0.0.2 sequence foundation failed."))
 
@@ -83,6 +86,7 @@ def full_test():
         success += 1
     except Exception as e:
         failure += 1
+        red(traceback.print_exc())
         print(red(e))
         print(red("Version 0.0.3 logging foundation failed."))
 
@@ -109,6 +113,7 @@ def full_test():
         success += 1
     except Exception as e:
         failure += 1
+        red(traceback.print_exc())
         print(red(e))
         print(red("Version 0.0.4 sequence statistics failed."))
 
@@ -163,8 +168,91 @@ def full_test():
         success += 1
     except Exception as e:
         failure += 1
+        red(traceback.print_exc())
         print(red(e))
         print(red("Version 0.0.5 regional sequence analysis failed."))
+
+    try:
+        tests += 1
+        analyzer = Analyzer("AAAACCCCGGGGTTTT")
+        complexity = analyzer.get_sequence_complexity()
+        assert isinstance(complexity, float), "Complexity is not a float."
+        assert complexity == 1.0, "Four equally distributed bases should have complexity 1.0."
+        analyzer = Analyzer("AAAAAAAAAAAAAAAA")
+        complexity = analyzer.get_sequence_complexity()
+        assert complexity == 0.0, "A single repeated base should have complexity 0.0."
+        analyzer = Analyzer("ATGCATGCATGC")
+        complexity = analyzer.get_sequence_complexity()
+        assert complexity == 1.0, "Four equally distributed bases should have complexity 1.0."
+        analyzer = Analyzer("AAAAATTTTT")
+        complexity = analyzer.get_sequence_complexity()
+        assert complexity == 0.5, "Two equally distributed bases should have complexity 0.5."
+        regional_complexity = analyzer.get_regional_complexity(5)
+        assert isinstance(regional_complexity, list), "Regional complexity did not return a list."
+        assert len(regional_complexity) == 2, "Expected two complexity regions."
+        assert regional_complexity[0]["region"] == 1, "First complexity region number is incorrect."
+        assert regional_complexity[0]["start"] == 1, "First complexity region start is incorrect."
+        assert regional_complexity[0]["end"] == 5, "First complexity region end is incorrect."
+        assert regional_complexity[0]["complexity"] == 0.0, "First region complexity is incorrect."
+        assert regional_complexity[1]["region"] == 2, "Second complexity region number is incorrect."
+        assert regional_complexity[1]["start"] == 6, "Second complexity region start is incorrect."
+        assert regional_complexity[1]["end"] == 10, "Second complexity region end is incorrect."
+        assert regional_complexity[1]["complexity"] == 0.0, "Second region complexity is incorrect."
+        analyzer = Analyzer("ATGCNN")
+        complexity = analyzer.get_sequence_complexity()
+        assert isinstance(complexity, float), "Complexity with N is not a float."
+        assert 0.0 <= complexity <= 1.0, "Complexity with N is outside the expected range."
+        print(green("Version 0.0.6 sequence complexity analysis is online."))
+        success += 1
+    except Exception as e:
+        failure += 1
+        print(red(e))
+        print(red("Version 0.0.6 sequence complexity analysis failed."))
+
+    try:
+        tests += 1
+        analyzer = Analyzer("ATGCATGCATGC")
+        repeats = analyzer.get_repeats(4)
+        assert isinstance(repeats, dict), "Repeat analysis did not return a dictionary."
+        assert "ATGC" in repeats, "Expected ATGC repeat was not detected."
+        assert len(repeats["ATGC"]) == 3, "Incorrect number of ATGC repeat occurrences."
+        assert repeats["ATGC"] == [1, 5, 9], "ATGC repeat positions are incorrect."
+        frequency = analyzer.get_repeat_frequency(4)
+        assert frequency == 9, "Repeat frequency should count all repeated pattern occurrences."
+        analyzer = Analyzer("AAAAATTTTT")
+        repeats = analyzer.get_repeats(2)
+        assert "AA" in repeats, "AA repeat was not detected."
+        assert "TT" in repeats, "TT repeat was not detected."
+        assert len(repeats["AA"]) == 4, "Incorrect AA repeat count."
+        assert len(repeats["TT"]) == 4, "Incorrect TT repeat count."
+        regional_density = analyzer.get_regional_repeat_density(5, 2)
+        assert isinstance(regional_density, list), "Regional repeat density did not return a list."
+        assert len(regional_density) == 2, "Incorrect number of regional repeat-density results."
+        assert regional_density[0]["region"] == 1, "First repeat-density region is incorrect."
+        assert regional_density[1]["region"] == 2, "Second repeat-density region is incorrect."
+        assert regional_density[0]["repeat_density"] > 0.0, "First region repeat density should be greater than zero."
+        assert regional_density[1]["repeat_density"] > 0.0, "Second region repeat density should be greater than zero."
+        try:
+            analyzer.get_repeats(0)
+            raise AssertionError("Zero repeat length was accepted.")
+        except ValueError:
+            pass
+        try:
+            analyzer.get_repeats(-1)
+            raise AssertionError("Negative repeat length was accepted.")
+        except ValueError:
+            pass
+        try:
+            analyzer.get_repeats("2")
+            raise AssertionError("Non-integer repeat length was accepted.")
+        except TypeError:
+            pass
+        print(green("Version 0.0.7 repetitive sequence analysis is online."))
+        success += 1
+    except Exception as e:
+        failure += 1
+        print(red(e))
+        print(red("Version 0.0.7 repetitive sequence analysis failed."))
 
     print()
     print("===================================")

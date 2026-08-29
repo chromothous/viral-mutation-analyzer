@@ -17,3 +17,9 @@ Version 0.0.5
 Regional sequence analysis is online.
 
 Version 0.0.6
+Sequence complexity analysis is online.
+
+Version 0.0.7
+Repretitive sequence analysis is online.
+
+Version 0.0.8
