@@ -751,6 +751,73 @@ def full_test():
         print(red(e))
         print(red("Version 0.5.0 mutation-risk scoring failed."))
 
+    try:
+        tests += 1
+        from classes.configuration import Configuration
+        from classes.risk_scorer import RiskScorer
+        configuration = Configuration()
+        assert isinstance(configuration, Configuration), "Configuration did not initialize as a Configuration instance."
+        default_weights = configuration.get("risk_weights")
+        assert isinstance(default_weights, dict), "Default risk weights did not return a dictionary."
+        assert default_weights["complexity"] == 1.0, "Default complexity weight is incorrect."
+        assert default_weights["repeat_density"] == 1.0, "Default repeat-density weight is incorrect."
+        assert default_weights["motif_density"] == 1.0, "Default motif-density weight is incorrect."
+        scorer = RiskScorer(configuration)
+        assert isinstance(scorer, RiskScorer), "Risk scorer did not initialize as a RiskScorer instance."
+        assert scorer.get_weights() == default_weights, "Risk scorer did not load weights from configuration."
+        scorer.set_weight("complexity", 4.0)
+        assert scorer.get_weights()["complexity"] == 4.0, "Updated complexity weight is incorrect."
+        assert configuration.get("risk_weights")["complexity"] == 4.0, "Updated complexity weight was not synchronized with configuration."
+        scorer.set_weight("repeat_density", 2.0)
+        assert scorer.get_weights()["repeat_density"] == 2.0, "Updated repeat-density weight is incorrect."
+        scorer.set_weights({
+            "complexity": 4.0,
+            "repeat_density": 2.0,
+            "motif_density": 2.0
+        })
+        assert scorer.get_weights()["complexity"] == 4.0, "Configured complexity weight is incorrect."
+        assert scorer.get_weights()["repeat_density"] == 2.0, "Configured repeat-density weight is incorrect."
+        assert scorer.get_weights()["motif_density"] == 2.0, "Configured motif-density weight is incorrect."
+        normalized = scorer.normalize_weights()
+        assert abs(normalized["complexity"] - 0.5) < 0.000001, "Normalized complexity weight is incorrect."
+        assert abs(normalized["repeat_density"] - 0.25) < 0.000001, "Normalized repeat-density weight is incorrect."
+        assert abs(normalized["motif_density"] - 0.25) < 0.000001, "Normalized motif-density weight is incorrect."
+        assert abs(sum(normalized.values()) - 1.0) < 0.000001, "Normalized risk weights do not sum to 1.0."
+        assert configuration.get("risk_weights") == normalized, "Normalized weights were not synchronized with configuration."
+        try:
+            scorer.set_weight("complexity", -1)
+            raise AssertionError("Negative risk weight was accepted.")
+        except ValueError:
+            pass
+        try:
+            scorer.set_weight("complexity", "high")
+            raise AssertionError("Non-numeric risk weight was accepted.")
+        except TypeError:
+            pass
+        try:
+            scorer.set_weights({})
+            raise AssertionError("Empty risk weights were accepted.")
+        except ValueError:
+            pass
+        try:
+            scorer.set_weights({
+                "complexity": 0,
+                "repeat_density": 0
+            })
+            raise AssertionError("Zero-sum risk weights were accepted.")
+        except ValueError:
+            pass
+        configuration.reset()
+        assert configuration.get("risk_weights")["complexity"] == 1.0, "Configuration reset did not restore the default complexity weight."
+        assert configuration.get("risk_weights")["repeat_density"] == 1.0, "Configuration reset did not restore the default repeat-density weight."
+        assert configuration.get("risk_weights")["motif_density"] == 1.0, "Configuration reset did not restore the default motif-density weight."
+        print(green("Version 0.6.0 configurable scoring weights are online."))
+        success += 1
+    except Exception as e:
+        failure += 1
+        print(red(e))
+        print(red("Version 0.6.0 configurable scoring weights failed."))
+
     print()
     print("===================================")
     print("VIRAL MUTATION ANALYZER TEST SUITE")

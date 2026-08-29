@@ -2,9 +2,19 @@ from classes.logger import Logger
 
 
 class RiskScorer:
-    def __init__(self, weights=None):
+    def __init__(self, configuration=None, weights=None):
         self.logger = Logger()
-        self.weights = weights or {}
+        self.configuration = None
+        self.weights = {}
+
+        if isinstance(configuration, dict) and weights is None:
+            self.set_weights(configuration)
+        elif configuration is not None:
+            self.configuration = configuration
+            self.set_weights(configuration.get("risk_weights"))
+        elif weights is not None:
+            self.set_weights(weights)
+
         self.logger.info("Risk scorer initialized.")
 
     def set_weights(self, weights):
@@ -39,6 +49,38 @@ class RiskScorer:
             f"Risk weights configured for {len(self.weights)} features."
         )
 
+    def set_weight(self, feature, weight):
+        if not isinstance(weight, (int, float)):
+            self.logger.failure(
+                f"Risk weight for {feature} is not numeric."
+            )
+            raise TypeError("Risk weight must be numeric.")
+
+        if weight < 0:
+            self.logger.failure(
+                f"Risk weight for {feature} is negative."
+            )
+            raise ValueError("Risk weight cannot be negative.")
+
+        updated_weights = self.weights.copy()
+        updated_weights[feature] = weight
+
+        if sum(updated_weights.values()) == 0:
+            self.logger.failure("Risk weights cannot all be zero.")
+            raise ValueError("Risk weights cannot all be zero.")
+
+        self.weights = updated_weights
+
+        if self.configuration is not None:
+            self.configuration.set(
+                "risk_weights",
+                self.weights
+            )
+
+        self.logger.info(
+            f"Risk weight updated: {feature}."
+        )
+
     def get_weights(self):
         return self.weights.copy()
 
@@ -59,6 +101,12 @@ class RiskScorer:
         }
 
         self.weights = normalized
+
+        if self.configuration is not None:
+            self.configuration.set(
+                "risk_weights",
+                self.weights
+            )
 
         self.logger.info("Risk weights normalized.")
 

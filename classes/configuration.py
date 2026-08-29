@@ -8,7 +8,12 @@ class Configuration:
             "window_size": 100,
             "kmer_size": 3,
             "repeat_length": 3,
-            "motifs": {}
+            "motifs": {},
+            "risk_weights": {
+                "complexity": 1.0,
+                "repeat_density": 1.0,
+                "motif_density": 1.0
+            }
         }
         self.logger.info("Configuration initialized.")
 
@@ -42,6 +47,11 @@ class Configuration:
             "window_size": 100,
             "kmer_size": 3,
             "repeat_length": 3,
-            "motifs": {}
+            "motifs": {},
+            "risk_weights": {
+                "complexity": 1.0,
+                "repeat_density": 1.0,
+                "motif_density": 1.0
+            }
         }
         self.logger.info("Configuration reset to defaults.")

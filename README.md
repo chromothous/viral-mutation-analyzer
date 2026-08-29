@@ -45,3 +45,6 @@ Feature normalization is online.
 
 Version 0.5.0
 Mutation-risk scoring is online.
+
+Version 0.6.0
+Configurable scoring weights are online.
