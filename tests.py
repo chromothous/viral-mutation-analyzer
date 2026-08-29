@@ -254,6 +254,58 @@ def full_test():
         print(red(e))
         print(red("Version 0.0.7 repetitive sequence analysis failed."))
 
+    try:
+        tests += 1
+        analyzer = Analyzer("ATGCATGC")
+        counts = analyzer.get_kmer_counts(2)
+        assert isinstance(counts, dict), "K-mer counts did not return a dictionary."
+        assert counts["AT"] == 2, "AT k-mer count is incorrect."
+        assert counts["TG"] == 2, "TG k-mer count is incorrect."
+        assert counts["GC"] == 2, "GC k-mer count is incorrect."
+        assert counts["CA"] == 1, "CA k-mer count is incorrect."
+        assert len(counts) == 4, "Unique k-mer count is incorrect."
+        frequencies = analyzer.get_kmer_frequencies(2)
+        assert abs(frequencies["AT"] - (2 / 7)) < 0.000001, "AT k-mer frequency is incorrect."
+        assert abs(frequencies["TG"] - (2 / 7)) < 0.000001, "TG k-mer frequency is incorrect."
+        assert abs(frequencies["GC"] - (2 / 7)) < 0.000001, "GC k-mer frequency is incorrect."
+        assert abs(frequencies["CA"] - (1 / 7)) < 0.000001, "CA k-mer frequency is incorrect."
+        diversity = analyzer.get_kmer_diversity(2)
+        assert abs(diversity - (4 / 7)) < 0.000001, "K-mer diversity is incorrect."
+        analyzer = Analyzer("ATGCNNATGC")
+        counts = analyzer.get_kmer_counts(2)
+        assert "NN" not in counts, "K-mer containing N was included."
+        assert "NA" not in counts, "K-mer containing N was included."
+        assert "CN" not in counts, "K-mer containing N was included."
+        assert counts["AT"] == 2, "AT count with ambiguous bases is incorrect."
+        regional_profiles = analyzer.get_regional_kmer_profiles(5, 2)
+        assert isinstance(regional_profiles, list), "Regional k-mer profiles did not return a list."
+        assert len(regional_profiles) == 2, "Incorrect number of regional k-mer profiles."
+        assert regional_profiles[0]["region"] == 1, "First k-mer region number is incorrect."
+        assert regional_profiles[1]["region"] == 2, "Second k-mer region number is incorrect."
+        assert regional_profiles[0]["k"] == 2, "First region k value is incorrect."
+        assert regional_profiles[1]["k"] == 2, "Second region k value is incorrect."
+        try:
+            analyzer.get_kmer_counts(0)
+            raise AssertionError("Zero k-mer length was accepted.")
+        except ValueError:
+            pass
+        try:
+            analyzer.get_kmer_counts(-1)
+            raise AssertionError("Negative k-mer length was accepted.")
+        except ValueError:
+            pass
+        try:
+            analyzer.get_kmer_counts("2")
+            raise AssertionError("Non-integer k-mer length was accepted.")
+        except TypeError:
+            pass
+        print(green("Version 0.0.8 k-mer analysis is online."))
+        success += 1
+    except Exception as e:
+        failure += 1
+        print(red(e))
+        print(red("Version 0.0.8 k-mer analysis failed."))
+
     print()
     print("===================================")
     print("VIRAL MUTATION ANALYZER TEST SUITE")

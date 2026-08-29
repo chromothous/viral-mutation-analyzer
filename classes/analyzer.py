@@ -255,3 +255,85 @@ class Analyzer:
             f"Regional repeat density calculated for {len(regional_density)} regions."
         )
         return regional_density
+
+    def get_kmer_counts(self, k, sequence=None):
+        if sequence is None:
+            if self.sequence is None:
+                raise ValueError("No sequence has been loaded.")
+            sequence = self.sequence
+        if not isinstance(k, int):
+            raise TypeError("K-mer length must be an integer.")
+        if k <= 0:
+            raise ValueError("K-mer length must be greater than zero.")
+        if k > len(sequence):
+            raise ValueError("K-mer length cannot exceed sequence length.")
+        counts = {}
+        for start in range(len(sequence) - k + 1):
+            kmer = sequence[start:start + k]
+            if "N" in kmer:
+                continue
+            counts[kmer] = counts.get(kmer, 0) + 1
+        self.logger.info(
+            f"Calculated {len(counts)} unique k-mers using k={k}."
+        )
+        if "N" in sequence:
+            self.logger.warning("K-mers containing ambiguous N bases were excluded.")
+        return counts
+
+    def get_kmer_frequencies(self, k, sequence=None):
+        counts = self.get_kmer_counts(k, sequence)
+        if sequence is None:
+            sequence = self.sequence
+        valid_kmers = sum(counts.values())
+        if valid_kmers == 0:
+            self.logger.warning("No valid k-mers were available for frequency analysis.")
+            return {}
+        frequencies = {
+            kmer: count / valid_kmers
+            for kmer, count in counts.items()
+        }
+        self.logger.info(
+            f"K-mer frequencies calculated using k={k}."
+        )
+        return frequencies
+
+    def get_kmer_diversity(self, k, sequence=None):
+        counts = self.get_kmer_counts(k, sequence)
+        if sequence is None:
+            sequence = self.sequence
+        valid_kmers = sum(counts.values())
+        if valid_kmers == 0:
+            self.logger.warning("No valid k-mers were available for diversity analysis.")
+            return 0.0
+        diversity = len(counts) / valid_kmers
+        self.logger.info(
+            f"K-mer diversity calculated using k={k}: {diversity:.4f}."
+        )
+        return diversity
+
+    def get_regional_kmer_profiles(self, window_size, k):
+        regions = self.get_regions(window_size)
+        regional_profiles = []
+        for region in regions:
+            counts = self.get_kmer_counts(k, region["sequence"])
+            total = sum(counts.values())
+            frequencies = {}
+            if total > 0:
+                frequencies = {
+                    kmer: count / total
+                    for kmer, count in counts.items()
+                }
+            regional_profiles.append({
+                "region": region["region"],
+                "start": region["start"],
+                "end": region["end"],
+                "k": k,
+                "counts": counts,
+                "frequencies": frequencies,
+                "unique_kmers": len(counts),
+                "total_kmers": total
+            })
+        self.logger.info(
+            f"Regional k-mer profiles calculated for {len(regional_profiles)} regions."
+        )
+        return regional_profiles
