@@ -306,6 +306,55 @@ def full_test():
         print(red(e))
         print(red("Version 0.0.8 k-mer analysis failed."))
 
+    try:
+        tests += 1
+        analyzer = Analyzer("ATGCGCATGCGCATGC")
+        positions = analyzer.get_motif_positions("ATGC")
+        assert isinstance(positions, list), "Motif positions did not return a list."
+        assert positions == [1, 7, 13], "Motif positions are incorrect."
+        analysis = analyzer.get_motif_analysis({
+            "START": "ATG",
+            "GC": "GC"
+        })
+        assert isinstance(analysis, dict), "Motif analysis did not return a dictionary."
+        assert "START" in analysis, "START motif is missing from analysis."
+        assert "GC" in analysis, "GC motif is missing from analysis."
+        assert analysis["START"]["motif"] == "ATG", "START motif value is incorrect."
+        assert analysis["START"]["count"] == 3, "START motif count is incorrect."
+        assert analysis["START"]["positions"] == [1, 7, 13], "START motif positions are incorrect."
+        assert analysis["GC"]["count"] == 5, "GC motif count is incorrect."
+        assert analysis["GC"]["positions"] == [3, 5, 9, 11, 15], "GC motif positions are incorrect."      
+        assert abs(analysis["START"]["density"] - (3 / 16)) < 0.000001, "START motif density is incorrect."
+        regional_profiles = analyzer.get_regional_motif_profiles(8, {
+            "START": "ATG",
+            "GC": "GC"
+        })
+        assert isinstance(regional_profiles, list), "Regional motif profiles did not return a list."
+        assert len(regional_profiles) == 2, "Incorrect number of regional motif profiles."
+        assert regional_profiles[0]["region"] == 1, "First motif region number is incorrect."
+        assert regional_profiles[1]["region"] == 2, "Second motif region number is incorrect."
+        assert regional_profiles[0]["motifs"]["START"]["count"] == 2, "First region START motif count is incorrect."
+        assert regional_profiles[1]["motifs"]["START"]["count"] == 1, "Second region START motif count is incorrect."
+        analyzer = Analyzer("ATGCNNATGC")
+        positions = analyzer.get_motif_positions("ATGC")
+        assert positions == [1, 7], "Motif detection with N is incorrect."
+        try:
+            analyzer.get_motif_positions("")
+            raise AssertionError("Empty motif was accepted.")
+        except ValueError:
+            pass
+        try:
+            analyzer.get_motif_positions(123)
+            raise AssertionError("Non-string motif was accepted.")
+        except TypeError:
+            pass
+        print(green("Version 0.0.9 motif analysis is online."))
+        success += 1
+    except Exception as e:
+        failure += 1
+        print(red(e))
+        print(red("Version 0.0.9 motif analysis failed."))
+
     print()
     print("===================================")
     print("VIRAL MUTATION ANALYZER TEST SUITE")

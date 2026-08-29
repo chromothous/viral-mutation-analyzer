@@ -26,3 +26,4 @@ Version 0.0.8
 K-mer analysis is online.
 
 Version 0.0.9
+Motif analysis is online.

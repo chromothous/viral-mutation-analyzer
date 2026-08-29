@@ -1,6 +1,7 @@
 import math
 
 from classes.logger import Logger
+from constants.motifs import MOTIFS
 
 
 class Analyzer:
@@ -335,5 +336,78 @@ class Analyzer:
             })
         self.logger.info(
             f"Regional k-mer profiles calculated for {len(regional_profiles)} regions."
+        )
+        return regional_profiles
+
+    def get_motif_positions(self, motif):
+        if self.sequence is None:
+            raise ValueError("No sequence has been loaded.")
+        if not isinstance(motif, str):
+            raise TypeError("Motif must be a string.")
+        motif = motif.upper()
+        if not motif:
+            raise ValueError("Motif cannot be empty.")
+        positions = []
+        for start in range(len(self.sequence) - len(motif) + 1):
+            if self.sequence[start:start + len(motif)] == motif:
+                positions.append(start + 1)
+        self.logger.info(
+            f"Detected {len(positions)} occurrences of motif {motif}."
+        )
+        return positions
+
+    def get_motif_analysis(self, motifs=None):
+        if self.sequence is None:
+            raise ValueError("No sequence has been loaded.")
+        if motifs is None:
+            motifs = MOTIFS
+        if not isinstance(motifs, dict):
+            raise TypeError("Motifs must be provided as a dictionary.")
+        analysis = {}
+        for name, motif in motifs.items():
+            positions = self.get_motif_positions(motif)
+            analysis[name] = {
+                "motif": motif,
+                "count": len(positions),
+                "positions": positions,
+                "density": len(positions) / self.get_length()
+            }
+        self.logger.info(
+            f"Motif analysis completed for {len(analysis)} motifs."
+        )
+        return analysis
+
+    def get_regional_motif_profiles(self, window_size, motifs=None):
+        if motifs is None:
+            motifs = MOTIFS
+        if not isinstance(motifs, dict):
+            raise TypeError("Motifs must be provided as a dictionary.")
+        regions = self.get_regions(window_size)
+        regional_profiles = []
+        for region in regions:
+            profile = {
+                "region": region["region"],
+                "start": region["start"],
+                "end": region["end"],
+                "motifs": {}
+            }
+            for name, motif in motifs.items():
+                motif = motif.upper()
+                positions = []
+                for start in range(
+                    region["start"] - 1,
+                    min(region["end"], len(self.sequence) - len(motif) + 1)
+                ):
+                    if self.sequence[start:start + len(motif)] == motif:
+                        positions.append(start + 1)
+                profile["motifs"][name] = {
+                    "motif": motif,
+                    "count": len(positions),
+                    "positions": positions,
+                    "density": len(positions) / len(self.sequence)
+                }
+            regional_profiles.append(profile)
+        self.logger.info(
+            f"Regional motif profiles calculated for {len(regional_profiles)} regions."
         )
         return regional_profiles
