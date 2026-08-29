@@ -37,3 +37,5 @@ Raw sequence ingestion is online.
 Version 0.2.0
 FASTA parsing is online.
 
+Version 0.3.0
+Configuration is online.

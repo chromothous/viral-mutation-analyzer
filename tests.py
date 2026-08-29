@@ -6,6 +6,7 @@ from classes.analyzer import Analyzer
 from classes.logger import Logger
 from classes.sequence_ingestor import SequenceIngestor
 from classes.fasta_parser import FastaParser
+from classes.configuration import Configuration
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -503,6 +504,53 @@ def full_test():
         failure += 1
         print(red(e))
         print(red("Version 0.2.0 FASTA parsing failed."))
+
+    try:
+        tests += 1
+        from classes.configuration import Configuration
+        configuration = Configuration()
+        assert isinstance(configuration, Configuration), "Configuration did not initialize as a Configuration instance."
+        assert configuration.get("window_size") == 100, "Default window size is incorrect."
+        assert configuration.get("kmer_size") == 3, "Default k-mer size is incorrect."
+        assert configuration.get("repeat_length") == 3, "Default repeat length is incorrect."
+        assert configuration.get("motifs") == {}, "Default motif configuration is incorrect."
+        configuration.set("window_size", 250)
+        assert configuration.get("window_size") == 250, "Updated window size was not stored correctly."
+        configuration.set("kmer_size", 5)
+        assert configuration.get("kmer_size") == 5, "Updated k-mer size was not stored correctly."
+        configuration.set("repeat_length", 4)
+        assert configuration.get("repeat_length") == 4, "Updated repeat length was not stored correctly."
+        configuration.set("motifs", {"START": "ATG"})
+        assert configuration.get("motifs") == {"START": "ATG"}, "Updated motif configuration was not stored correctly."
+        settings = configuration.get_all()
+        assert isinstance(settings, dict), "Configuration settings did not return a dictionary."
+        assert settings["window_size"] == 250, "Configuration dictionary contains an incorrect window size."
+        assert settings["kmer_size"] == 5, "Configuration dictionary contains an incorrect k-mer size."
+        assert settings["repeat_length"] == 4, "Configuration dictionary contains an incorrect repeat length."
+        assert settings["motifs"] == {"START": "ATG"}, "Configuration dictionary contains an incorrect motif configuration."
+        settings["window_size"] = 999
+        assert configuration.get("window_size") == 250, "Configuration was modified through the returned settings dictionary."
+        try:
+            configuration.get("unknown")
+            raise AssertionError("Unknown configuration setting was accepted.")
+        except KeyError:
+            pass
+        try:
+            configuration.set("unknown", 123)
+            raise AssertionError("Unknown configuration setting was updated.")
+        except KeyError:
+            pass
+        configuration.reset()
+        assert configuration.get("window_size") == 100, "Configuration reset did not restore the default window size."
+        assert configuration.get("kmer_size") == 3, "Configuration reset did not restore the default k-mer size."
+        assert configuration.get("repeat_length") == 3, "Configuration reset did not restore the default repeat length."
+        assert configuration.get("motifs") == {}, "Configuration reset did not restore the default motifs."
+        print(green("Version 0.3.0 configuration is online."))
+        success += 1
+    except Exception as e:
+        failure += 1
+        print(red(e))
+        print(red("Version 0.3.0 configuration failed."))
 
     print()
     print("===================================")
