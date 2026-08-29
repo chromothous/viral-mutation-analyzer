@@ -283,8 +283,6 @@ class Analyzer:
 
     def get_kmer_frequencies(self, k, sequence=None):
         counts = self.get_kmer_counts(k, sequence)
-        if sequence is None:
-            sequence = self.sequence
         valid_kmers = sum(counts.values())
         if valid_kmers == 0:
             self.logger.warning("No valid k-mers were available for frequency analysis.")
@@ -300,8 +298,6 @@ class Analyzer:
 
     def get_kmer_diversity(self, k, sequence=None):
         counts = self.get_kmer_counts(k, sequence)
-        if sequence is None:
-            sequence = self.sequence
         valid_kmers = sum(counts.values())
         if valid_kmers == 0:
             self.logger.warning("No valid k-mers were available for diversity analysis.")
@@ -411,3 +407,55 @@ class Analyzer:
             f"Regional motif profiles calculated for {len(regional_profiles)} regions."
         )
         return regional_profiles
+
+    def get_unified_regional_analysis(self, window_size, k, repeat_length, motifs=None):
+        if self.sequence is None:
+            raise ValueError("No sequence has been loaded.")
+        if not isinstance(window_size, int):
+            raise TypeError("Window size must be an integer.")
+        if not isinstance(k, int):
+            raise TypeError("K-mer length must be an integer.")
+        if not isinstance(repeat_length, int):
+            raise TypeError("Repeat length must be an integer.")
+        if window_size <= 0:
+            raise ValueError("Window size must be greater than zero.")
+        if k <= 0:
+            raise ValueError("K-mer length must be greater than zero.")
+        if repeat_length <= 0:
+            raise ValueError("Repeat length must be greater than zero.")
+        if motifs is None:
+            motifs = MOTIFS
+        statistics = self.get_regional_statistics(window_size)
+        complexity = self.get_regional_complexity(window_size)
+        repeat_density = self.get_regional_repeat_density(
+            window_size,
+            repeat_length
+        )
+        kmer_profiles = self.get_regional_kmer_profiles(
+            window_size,
+            k
+        )
+        motif_profiles = self.get_regional_motif_profiles(
+            window_size,
+            motifs
+        )
+        unified_analysis = []
+        for index in range(len(statistics)):
+            unified_analysis.append({
+                "region": statistics[index]["region"],
+                "start": statistics[index]["start"],
+                "end": statistics[index]["end"],
+                "length": statistics[index]["length"],
+                "sequence": self.sequence[
+                    statistics[index]["start"] - 1:statistics[index]["end"]
+                ],
+                "statistics": statistics[index],
+                "complexity": complexity[index],
+                "repeat_density": repeat_density[index],
+                "kmer_profile": kmer_profiles[index],
+                "motif_profile": motif_profiles[index]
+            })
+        self.logger.info(
+            f"Unified regional analysis completed for {len(unified_analysis)} regions."
+        )
+        return unified_analysis

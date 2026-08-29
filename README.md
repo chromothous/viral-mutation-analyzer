@@ -27,3 +27,7 @@ K-mer analysis is online.
 
 Version 0.0.9
 Motif analysis is online.
+
+Version 0.1.0
+Unified regional analysis is online.
+

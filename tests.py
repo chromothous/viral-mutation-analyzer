@@ -355,6 +355,65 @@ def full_test():
         print(red(e))
         print(red("Version 0.0.9 motif analysis failed."))
 
+    try:
+        tests += 1
+        analyzer = Analyzer("ATGCATGCNNATGCATGC")
+        analysis = analyzer.get_unified_regional_analysis(
+            6,
+            2,
+            2,
+            {
+                "ATG": "ATG",
+                "GC": "GC"
+            }
+        )
+        assert isinstance(analysis, list), "Unified analysis did not return a list."
+        assert len(analysis) == 3, "Unified analysis returned an incorrect number of regions."
+        assert analysis[0]["region"] == 1, "First unified region number is incorrect."
+        assert analysis[1]["region"] == 2, "Second unified region number is incorrect."
+        assert analysis[2]["region"] == 3, "Third unified region number is incorrect."
+        assert analysis[0]["start"] == 1, "First unified region start is incorrect."
+        assert analysis[0]["end"] == 6, "First unified region end is incorrect."
+        assert analysis[1]["start"] == 7, "Second unified region start is incorrect."
+        assert analysis[1]["end"] == 12, "Second unified region end is incorrect."
+        assert analysis[2]["start"] == 13, "Third unified region start is incorrect."
+        assert analysis[2]["end"] == 18, "Third unified region end is incorrect."
+        assert "statistics" in analysis[0], "Regional statistics are missing from unified analysis."
+        assert "complexity" in analysis[0], "Regional complexity is missing from unified analysis."
+        assert "repeat_density" in analysis[0], "Repeat density is missing from unified analysis."
+        assert "kmer_profile" in analysis[0], "K-mer profile is missing from unified analysis."
+        assert "motif_profile" in analysis[0], "Motif profile is missing from unified analysis."
+        assert analysis[0]["statistics"]["length"] == 6, "First region statistics length is incorrect."
+        assert analysis[1]["statistics"]["counts"]["N"] == 2, "Second region N count is incorrect."
+        assert 0.0 <= analysis[0]["complexity"]["complexity"] <= 1.0, "First region complexity is outside the expected range."
+        assert 0.0 <= analysis[1]["complexity"]["complexity"] <= 1.0, "Second region complexity is outside the expected range."
+        assert analysis[0]["kmer_profile"]["k"] == 2, "First region k-mer length is incorrect."
+        assert analysis[1]["kmer_profile"]["k"] == 2, "Second region k-mer length is incorrect."
+        assert "ATG" in analysis[0]["motif_profile"]["motifs"], "ATG motif is missing from first region."
+        assert "GC" in analysis[0]["motif_profile"]["motifs"], "GC motif is missing from first region."
+        assert isinstance(analysis[0]["repeat_density"]["repeat_density"], float), "Repeat density is not a float."
+        try:
+            analyzer.get_unified_regional_analysis(0, 2, 2)
+            raise AssertionError("Zero window size was accepted.")
+        except ValueError:
+            pass
+        try:
+            analyzer.get_unified_regional_analysis(6, 0, 2)
+            raise AssertionError("Zero k-mer length was accepted.")
+        except ValueError:
+            pass
+        try:
+            analyzer.get_unified_regional_analysis(6, 2, 0)
+            raise AssertionError("Zero repeat length was accepted.")
+        except ValueError:
+            pass
+        print(green("Version 0.1.0 unified regional analysis is online."))
+        success += 1
+    except Exception as e:
+        failure += 1
+        print(red(e))
+        print(red("Version 0.1.0 unified regional analysis failed."))
+
     print()
     print("===================================")
     print("VIRAL MUTATION ANALYZER TEST SUITE")
