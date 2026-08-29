@@ -663,6 +663,94 @@ def full_test():
         print(red(e))
         print(red("Version 0.4.0 feature normalization failed."))
 
+    try:
+        tests += 1
+        from classes.risk_scorer import RiskScorer
+        scorer = RiskScorer({
+            "complexity": 1,
+            "repeat_density": 2,
+            "motif_density": 1
+        })
+        assert isinstance(scorer, RiskScorer), "Risk scorer did not initialize as a RiskScorer instance."
+        assert scorer.get_weights()["complexity"] == 1, "Initial complexity weight is incorrect."
+        assert scorer.get_weights()["repeat_density"] == 2, "Initial repeat-density weight is incorrect."
+        assert scorer.get_weights()["motif_density"] == 1, "Initial motif-density weight is incorrect."
+        normalized_weights = scorer.normalize_weights()
+        assert abs(normalized_weights["complexity"] - 0.25) < 0.000001, "Normalized complexity weight is incorrect."
+        assert abs(normalized_weights["repeat_density"] - 0.5) < 0.000001, "Normalized repeat-density weight is incorrect."
+        assert abs(normalized_weights["motif_density"] - 0.25) < 0.000001, "Normalized motif-density weight is incorrect."
+        features = {
+            "complexity": 0.8,
+            "repeat_density": 0.6,
+            "motif_density": 0.4
+        }
+        result = scorer.score_features(features)
+        assert isinstance(result, dict), "Risk scoring did not return a dictionary."
+        assert "score" in result, "Risk score is missing from the scoring result."
+        assert "contributions" in result, "Feature contributions are missing from the scoring result."
+        assert abs(result["score"] - 0.6) < 0.000001, "Combined risk score is incorrect."
+        assert abs(result["contributions"]["complexity"] - 0.2) < 0.000001, "Complexity contribution is incorrect."
+        assert abs(result["contributions"]["repeat_density"] - 0.3) < 0.000001, "Repeat-density contribution is incorrect."
+        assert abs(result["contributions"]["motif_density"] - 0.1) < 0.000001, "Motif-density contribution is incorrect."
+        assert abs(sum(result["contributions"].values()) - result["score"]) < 0.000001, "Feature contributions do not sum to the risk score."
+        regional_features = [
+            {
+                "region": 1,
+                "features": {
+                    "complexity": 0.8,
+                    "repeat_density": 0.6,
+                    "motif_density": 0.4
+                }
+            },
+            {
+                "region": 2,
+                "features": {
+                    "complexity": 0.2,
+                    "repeat_density": 0.4,
+                    "motif_density": 0.8
+                }
+            }
+        ]
+        scored_regions = scorer.score_regions(regional_features)
+        assert isinstance(scored_regions, list), "Regional risk scoring did not return a list."
+        assert len(scored_regions) == 2, "Regional risk scoring returned an incorrect number of regions."
+        assert scored_regions[0]["region"] == 1, "First scored region number is incorrect."
+        assert scored_regions[1]["region"] == 2, "Second scored region number is incorrect."
+        assert abs(scored_regions[0]["risk_score"] - 0.6) < 0.000001, "First regional risk score is incorrect."
+        assert abs(scored_regions[1]["risk_score"] - 0.45) < 0.000001, "Second regional risk score is incorrect."
+        assert "contributions" in scored_regions[0], "First region feature contributions are missing."
+        assert "contributions" in scored_regions[1], "Second region feature contributions are missing."
+        try:
+            scorer.set_weights({})
+            raise AssertionError("Empty risk weights were accepted.")
+        except ValueError:
+            pass
+        try:
+            scorer.set_weights({"complexity": -1})
+            raise AssertionError("Negative risk weight was accepted.")
+        except ValueError:
+            pass
+        try:
+            scorer.score_features({"complexity": 0.5})
+            raise AssertionError("Incomplete feature set was accepted for risk scoring.")
+        except KeyError:
+            pass
+        try:
+            scorer.score_features({
+                "complexity": "high",
+                "repeat_density": 0.5,
+                "motif_density": 0.5
+            })
+            raise AssertionError("Non-numeric risk feature was accepted.")
+        except TypeError:
+            pass
+        print(green("Version 0.5.0 mutation-risk scoring is online."))
+        success += 1
+    except Exception as e:
+        failure += 1
+        print(red(e))
+        print(red("Version 0.5.0 mutation-risk scoring failed."))
+
     print()
     print("===================================")
     print("VIRAL MUTATION ANALYZER TEST SUITE")

@@ -42,3 +42,6 @@ Configuration is online.
 
 Version 0.4.0
 Feature normalization is online.
+
+Version 0.5.0
+Mutation-risk scoring is online.
