@@ -7,6 +7,7 @@ from classes.logger import Logger
 from classes.sequence_ingestor import SequenceIngestor
 from classes.fasta_parser import FastaParser
 from classes.configuration import Configuration
+from classes.feature_normalizer import FeatureNormalizer
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -551,6 +552,116 @@ def full_test():
         failure += 1
         print(red(e))
         print(red("Version 0.3.0 configuration failed."))
+
+    try:
+        tests += 1
+        from classes.feature_normalizer import FeatureNormalizer
+        normalizer = FeatureNormalizer()
+        value = normalizer.normalize_value(50, 0, 100)
+        assert value == 0.5, "Midpoint normalization did not produce 0.5."
+        value = normalizer.normalize_value(0, 0, 100)
+        assert value == 0.0, "Minimum normalization did not produce 0.0."
+        value = normalizer.normalize_value(100, 0, 100)
+        assert value == 1.0, "Maximum normalization did not produce 1.0."
+        value = normalizer.normalize_value(25, 0, 100, True)
+        assert value == 0.75, "Inverted normalization produced an incorrect value."
+        value = normalizer.normalize_value(-50, 0, 100)
+        assert value == 0.0, "Values below the normalization range were not clamped to 0.0."
+        value = normalizer.normalize_value(150, 0, 100)
+        assert value == 1.0, "Values above the normalization range were not clamped to 1.0."
+        value = normalizer.normalize_value(50, 50, 50)
+        assert value == 0.0, "Identical minimum and maximum values did not produce 0.0."
+        features = {
+            "gc_content": 0.5,
+            "complexity": 0.25,
+            "repeat_density": 0.75
+        }
+        ranges = {
+            "gc_content": {
+                "minimum": 0.0,
+                "maximum": 1.0
+            },
+            "complexity": {
+                "minimum": 0.0,
+                "maximum": 1.0
+            },
+            "repeat_density": {
+                "minimum": 0.0,
+                "maximum": 1.0
+            }
+        }
+        normalized = normalizer.normalize_features(
+            features,
+            ranges,
+            {"complexity"}
+        )
+        assert isinstance(normalized, dict), "Normalized features did not return a dictionary."
+        assert normalized["gc_content"] == 0.5, "GC content normalization is incorrect."
+        assert normalized["complexity"] == 0.75, "Inverted complexity normalization is incorrect."
+        assert normalized["repeat_density"] == 0.75, "Repeat density normalization is incorrect."
+        regional_features = [
+            {
+                "region": 1,
+                "features": {
+                    "gc_content": 0.25,
+                    "complexity": 0.75
+                }
+            },
+            {
+                "region": 2,
+                "features": {
+                    "gc_content": 0.75,
+                    "complexity": 0.25
+                }
+            }
+        ]
+        regional_ranges = {
+            "gc_content": {
+                "minimum": 0.0,
+                "maximum": 1.0
+            },
+            "complexity": {
+                "minimum": 0.0,
+                "maximum": 1.0
+            }
+        }
+        normalized_regions = normalizer.normalize_regional_features(
+            regional_features,
+            regional_ranges,
+            {"complexity"}
+        )
+        assert isinstance(normalized_regions, list), "Regional normalization did not return a list."
+        assert len(normalized_regions) == 2, "Regional normalization returned an incorrect number of regions."
+        assert normalized_regions[0]["region"] == 1, "First normalized region number is incorrect."
+        assert normalized_regions[1]["region"] == 2, "Second normalized region number is incorrect."
+        assert normalized_regions[0]["features"]["gc_content"] == 0.25, "First region GC normalization is incorrect."
+        assert normalized_regions[0]["features"]["complexity"] == 0.25, "First region inverted complexity normalization is incorrect."
+        assert normalized_regions[1]["features"]["gc_content"] == 0.75, "Second region GC normalization is incorrect."
+        assert normalized_regions[1]["features"]["complexity"] == 0.75, "Second region inverted complexity normalization is incorrect."
+        try:
+            normalizer.normalize_value("50", 0, 100)
+            raise AssertionError("Non-numeric normalization value was accepted.")
+        except TypeError:
+            pass
+        try:
+            normalizer.normalize_value(50, 100, 0)
+            raise AssertionError("Reversed normalization range was accepted.")
+        except ValueError:
+            pass
+        try:
+            normalizer.normalize_features(
+                {"gc_content": 0.5},
+                {}
+            )
+            raise AssertionError("Feature without a normalization range was accepted.")
+        except KeyError:
+            pass
+        print(green("Version 0.4.0 feature normalization is online."))
+        success += 1
+    except Exception as e:
+        failure += 1
+        print(red(e))
+        print(red("Version 0.4.0 feature normalization failed."))
 
     print()
     print("===================================")

@@ -39,3 +39,6 @@ FASTA parsing is online.
 
 Version 0.3.0
 Configuration is online.
+
+Version 0.4.0
+Feature normalization is online.
